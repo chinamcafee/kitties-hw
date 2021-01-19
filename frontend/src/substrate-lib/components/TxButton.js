@@ -117,8 +117,10 @@ function TxButton ({
     setUnsub(() => unsub);
   };
 
-  const queryResHandler = result =>
+  const queryResHandler = result => {
+    console.log("queryResHandler:" + result.toString());
     result.isNone ? setStatus('None') : setStatus(result.toString());
+  }
 
   const query = async () => {
     const transformed = transformParams(paramFields, inputParams);

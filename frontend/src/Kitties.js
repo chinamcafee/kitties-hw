@@ -16,13 +16,51 @@ export default function Kitties (props) {
   const [kittyPrices, setKittyPrices] = useState([]);
   const [kitties, setKitties] = useState([]);
   const [status, setStatus] = useState('');
+  // const {
+  //   address,
+  //   meta: { source, isInjected }
+  // } = accountPair;
 
   const fetchKittyCnt = () => {
-    /* TODO: 加代码，从 substrate 端读取数据过来 */
+    let unsubscribe;
+
+    api.query.kittiesModule.kittiesCount( (newValue) => {
+      if (newValue.isNone) {
+
+      } else {
+        console.log("lalalalaKitties:"+newValue)
+        setKittyCnt(newValue);
+      }
+    }).then(unsub => {
+      unsubscribe = unsub;
+    })
+      .catch(console.error);
+
+    return () => unsubscribe && unsubscribe();
   };
 
   const fetchKitties = () => {
-    /* TODO: 加代码，从 substrate 端读取数据过来 */
+    console.log("accountPair:"+JSON.stringify(accountPair),"Fetchkeyring:"+JSON.stringify(keyring))
+    let unsubscribe;
+
+    if(accountPair !== null) {
+      api.query.kittiesModule.ownedKitties(accountPair.addressRaw, (newValue) => {
+        // The storage value is an Option<u32>
+        // So we have to check whether it is None first
+        // There is also unwrapOr
+        if (newValue.isNone) {
+          console.log("is None")
+        } else {
+          console.log("lalalalaKittiesFetch:" + newValue)
+          setKitties(newValue.unwrap());
+        }
+      }).then(unsub => {
+        unsubscribe = unsub;
+      })
+        .catch(console.error);
+
+      return () => unsubscribe && unsubscribe();
+    }
   };
 
   const populateKitties = () => {
@@ -30,11 +68,11 @@ export default function Kitties (props) {
   };
 
   useEffect(fetchKittyCnt, [api, keyring]);
-  useEffect(fetchKitties, [api, kittyCnt]);
+  useEffect(fetchKitties, [api, kittyCnt,accountPair]);
   useEffect(populateKitties, [kittyDNAs, kittyOwners]);
 
   return <Grid.Column width={16}>
-    <h1>小毛孩</h1>
+    <h1>小毛孩共有{kittyCnt.toString()}个</h1>
     <KittyCards kitties={kitties} accountPair={accountPair} setStatus={setStatus}/>
     <Form style={{ margin: '1em 0' }}>
       <Form.Field style={{ textAlign: 'center' }}>
@@ -43,6 +81,15 @@ export default function Kitties (props) {
           attrs={{
             palletRpc: 'kittiesModule',
             callable: 'create',
+            inputParams: [],
+            paramFields: []
+          }}
+        />
+        <TxButton
+          accountPair={accountPair} label='查询小毛孩' type='QUERY' setStatus={setStatus}
+          attrs={{
+            palletRpc: 'kittiesModule',
+            callable: 'ownedKitties',
             inputParams: [],
             paramFields: []
           }}
